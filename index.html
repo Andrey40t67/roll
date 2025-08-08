@@ -54,6 +54,14 @@
     .legend b{color:var(--txt)}
 
     @media (max-width:840px){ .app{padding:12px; gap:10px} .controls{gap:8px} .btn{height:40px; min-width:40px; padding:0 12px} .badge{top:10px; left:10px} }
+
+    /* Permission overlay */
+    .perm{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(11,15,20,.55); backdrop-filter: blur(8px); z-index:10}
+    .perm-box{width:min(520px,92%); border-radius:18px; padding:20px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); box-shadow:var(--shadow); text-align:center}
+    .perm-title{font-weight:800; font-size:18px; margin-bottom:6px}
+    .perm-text{color:var(--muted); font-size:14px; margin-bottom:12px}
+    .perm-actions{display:flex; gap:10px; justify-content:center}
+     .controls{gap:8px} .btn{height:40px; min-width:40px; padding:0 12px} .badge{top:10px; left:10px} }
   </style>
 </head>
 <body>
@@ -73,6 +81,21 @@
       <canvas id="draw"></canvas>
       <canvas id="overlay"></canvas>
       <div class="badge">
+        <div class="status"><span class="dot" id="dot"></span> <span id="statusText">Жду руки…</span></div>
+      </div>
+      <div id="perm" class="perm" hidden>
+        <div class="perm-box">
+          <div class="perm-title">Нужно разрешение на камеру</div>
+          <div class="perm-text" id="permText">Нажми кнопку ниже и выбери «Разрешить».</div>
+          <div class="perm-actions">
+            <button class="btn" id="permBtn">Включить камеру</button>
+            <button class="btn" id="permHow">Как разрешить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
         <div class="status"><span class="dot" id="dot"></span> <span id="statusText">Жду руки…</span></div>
       </div>
     </div>
@@ -115,6 +138,10 @@
     const debugBtn = document.getElementById('debug');
     const hint = document.getElementById('hint');
     const toggleCamBtn = document.getElementById('toggleCam');
+    const perm = document.getElementById('perm');
+    const permBtn = document.getElementById('permBtn');
+    const permHow = document.getElementById('permHow');
+    const permText = document.getElementById('permText');
 
     const feedCtx = feed.getContext('2d');
     const drawCtx = draw.getContext('2d');
@@ -124,6 +151,7 @@
     const mirrored = true; // mirror for natural UX
     let showDebug = false;
     let showCamera = true; // controls feed rendering
+    let streamRef = null; // keep track of MediaStream
 
     const palette = ['#00E1FF','#7CFFCB','#FFD166','#FF6EA1','#9B5CFF','#00FF87','#FF9A3C','#FFFFFF'];
     let colorIndex = 0; let strokeColor = palette[colorIndex]; let strokeSize = 6;
@@ -166,8 +194,13 @@
     document.getElementById('undo').addEventListener('click', undo);
     document.getElementById('save').addEventListener('click', ()=>{ const c=document.createElement('canvas'); c.width=draw.width; c.height=draw.height; const ec=c.getContext('2d'); ec.drawImage(draw,0,0); const url=c.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download='gesture-draw.png'; a.click(); });
     debugBtn.addEventListener('click', ()=>{ showDebug=!showDebug; debugBtn.textContent = showDebug ? 'Отладка: ВКЛ' : 'Отладка рук'; });
-    toggleCamBtn.addEventListener('click', ()=>{ showCamera=!showCamera; toggleCamBtn.textContent = showCamera ? 'Скрыть камеру' : 'Показать камеру'; // show/hide 3D panel
-      hand3d.style.display = showCamera ? 'none' : 'block'; setMode(showCamera ? 'camera' : '3D'); });
+    toggleCamBtn.addEventListener('click', ()=>{
+      showCamera = !showCamera;
+      toggleCamBtn.textContent = showCamera ? 'Скрыть камеру' : 'Показать камеру';
+      hand3d.style.display = showCamera ? 'none' : 'block';
+      setMode(showCamera ? 'camera' : '3D');
+      drawFeed();
+    }); });
 
     // ---------- Mapping & rendering helpers ----------
     function updateVideoTransform(){
@@ -181,6 +214,9 @@
       if(showCamera && video.videoWidth && video.videoHeight){
         const sw=vf.vw*vf.scale, sh=vf.vh*vf.scale; feedCtx.save(); feedCtx.translate(vf.cw/2, vf.ch/2); feedCtx.scale(mirrored?-1:1,1); feedCtx.drawImage(video, -sw/2, -sh/2, sw, sh); feedCtx.restore();
       }
+      feed.style.opacity = showCamera ? 0.34 : 0; // visual fade
+      video.style.display = showCamera ? 'block' : 'none';
+    }
       feed.style.opacity = showCamera ? 0.34 : 0; // visual fade
     }
     function px(pt){ // map normalized [0..1] to canvas pixels with cover + mirror
@@ -317,8 +353,60 @@
     });
 
     async function startCamera(){
+      const constraints = { video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:720} }, audio:false };
       try{
-        const constraints = { video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:720} }, audio:false };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        streamRef = stream;
+        video.srcObject = stream; await video.play();
+        setStatus('Камера активна'); setDot('#7cf7d4');
+        perm.hidden = true;
+        const cam = new Camera(video, { onFrame: async () => { await hands.send({ image: video }); }, width:1280, height:720 });
+        cam.start();
+      } catch(err){
+        setStatus('Нет доступа к камере: ' + err.name);
+        perm.hidden = false;
+        permText.textContent = 'Браузер блокирует камеру ('+err.name+'). Нажми «Как разрешить». Если открыто не по HTTPS — открой по https или на localhost.';
+        setDot('var(--danger)');
+      }
+    }
+
+    function stopCamera(){
+      if(streamRef){ streamRef.getTracks().forEach(t=>t.stop()); streamRef = null; }
+      video.srcObject = null;
+    }
+
+    async function preflight(){
+      // 1) Secure context check
+      const secureOK = window.isSecureContext || location.hostname === 'localhost';
+      if(!secureOK){
+        perm.hidden = false;
+        permText.textContent = 'Нужен HTTPS или localhost. Иначе браузер не даст доступ к камере.';
+        return;
+      }
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        perm.hidden = false; permText.textContent = 'Этот браузер не поддерживает camera API. Открой в современном Chrome/Safari/Firefox.'; return;
+      }
+      // 2) If already granted — стартуем без клика
+      try{
+        if(navigator.permissions && navigator.permissions.query){
+          const st = await navigator.permissions.query({ name: 'camera' });
+          if(st.state === 'granted'){ startCamera(); return; }
+          if(st.state === 'denied'){ perm.hidden=false; permText.textContent = 'Доступ к камере ранее запрещён. Открой настройки сайта и разреши камеру.'; return; }
+        }
+      } catch(_){}
+      // 3) Ask via user gesture
+      perm.hidden = false;
+      permText.textContent = 'Нажми «Включить камеру» и выбери «Разрешить».';
+    }
+
+    permBtn?.addEventListener('click', startCamera);
+    permHow?.addEventListener('click', ()=>{
+      alert('Как разрешить камеру:
+
+— Chrome: (i) в адресной строке → Разрешения сайта → Камера → "Разрешить".
+— Safari iOS: Настройки → Safari → Камера → Разрешить для этого сайта.
+— Если файл открыт как file:/// — запусти через HTTPS или localhost.');
+    });, height:{ideal:720} }, audio:false };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream; await video.play(); setStatus('Камера активна'); setDot('#7cf7d4');
         const cam = new Camera(video, { onFrame: async () => { await hands.send({ image: video }); }, width:1280, height:720 });
@@ -331,7 +419,7 @@
 
     // Kickoff
     hand3d.style.display = 'none';
-    startCamera();
+    preflight();
   })();
   </script>
 </body>
