@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Hand Control — Gesture Draw</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: radial-gradient(1200px 800px at 10% -10%, #6a00ff 0%, rgba(106,0,255,0) 60%),
+            radial-gradient(1200px 800px at 110% 10%, #00d0ff 0%, rgba(0,208,255,0) 60%),
+            radial-gradient(1200px 800px at 50% 120%, #00ff9d 0%, rgba(0,255,157,0) 60%),
+            #0b0f14;
+      --glass: rgba(255,255,255,0.08);
+      --glass-2: rgba(255,255,255,0.14);
+      --txt: #e7eef7;
+      --muted: #9db2c7;
+      --accent: #7cf7d4;
+      --danger: #ff4d6d;
+      --ok: #9fff6a;
+      --shadow: 0 20px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--txt); background:var(--bg); overflow:hidden;
+    }
+    .app{position:fixed; inset:0; display:grid; grid-template-rows:auto 1fr auto; gap:14px; padding:16px;}
+
+    /* Stage */
+    .stage{
+      position:relative; border-radius:22px; overflow:hidden;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(16px) saturate(120%);
+      -webkit-backdrop-filter: blur(16px) saturate(120%);
+      isolation:isolate;
+    }
+    video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:.34;}
+    canvas{position:absolute; inset:0; width:100%; height:100%;}
+    #draw{z-index:3}
+    #overlay{z-index:4; pointer-events:none}
+    .badge{
+      position:absolute; z-index:5; top:12px; left:12px; padding:8px 12px; border-radius:999px;
+      background:var(--glass); border:1px solid rgba(255,255,255,.14); font-weight:600; font-size:12px; letter-spacing:.3px;
+      box-shadow:var(--shadow);
+    }
+    .status{display:flex; align-items:center; gap:8px}
+    .dot{width:8px; height:8px; border-radius:50%; background:#999}
+
+    /* Top bar */
+    .top{display:flex; align-items:center; justify-content:space-between; gap:12px}
+    .brand{display:flex; align-items:center; gap:12px}
+    .brand .logo{width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,#00ffa6,#00d0ff 60%,#7b61ff);
+      box-shadow: 0 10px 30px rgba(0,255,166,.35), inset 0 1px 0 rgba(255,255,255,.25);
+    }
+    .brand .title{font-weight:800; letter-spacing:.2px}
+    .pill{
+      display:inline-flex; align-items:center; gap:10px; padding:10px 14px; border-radius:14px; background:var(--glass);
+      border:1px solid rgba(255,255,255,.12); box-shadow:var(--shadow); font-size:12px; color:var(--muted);
+    }
+
+    /* Bottom controls */
+    .controls{
+      display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+      background:var(--glass); border:1px solid rgba(255,255,255,.12); padding:10px; border-radius:16px; box-shadow:var(--shadow);
+    }
+    .btn{
+      -webkit-tap-highlight-color: transparent;
+      user-select:none; cursor:pointer; height:42px; min-width:42px; padding:0 14px; border-radius:12px; border:1px solid rgba(255,255,255,.14);
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      display:inline-flex; align-items:center; justify-content:center; gap:10px; font-weight:600; color:var(--txt);
+      transition:transform .08s ease, background .2s ease, opacity .2s ease; box-shadow:var(--shadow);
+    }
+    .btn:active{transform:translateY(1px) scale(.98)}
+    .btn[data-ghost="1"]{background:transparent}
+    .btn.small{height:36px; padding:0 10px; font-weight:600; font-size:12px}
+
+    .swatches{display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px; background:var(--glass); border:1px solid rgba(255,255,255,.12)}
+    .sw{width:22px; height:22px; border-radius:50%; border:2px solid rgba(255,255,255,.35); box-shadow:var(--shadow); cursor:pointer}
+
+    .legend{display:flex; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:12px}
+    .legend b{color:var(--txt)}
+
+    @media (max-width: 840px){
+      .app{padding:12px; gap:10px}
+      .controls{gap:8px}
+      .btn{height:40px; min-width:40px; padding:0 12px}
+      .badge{top:10px; left:10px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title">HAND CONTROL • <span style="color:var(--accent)">Gesture Draw</span></div>
+      </div>
+      <div class="pill" id="hint">Разрешите доступ к камере. Жесты: <b>pinch</b>=рисовать, <b>V</b>=цвет, <b>3 пальца</b>=толщина, <b>ладонь</b>=очистка.</div>
+    </div>
+
+    <div class="stage" id="stage">
+      <video id="video" playsinline></video>
+      <canvas id="feed"></canvas>
+      <canvas id="draw"></canvas>
+      <canvas id="overlay"></canvas>
+      <div class="badge">
+        <div class="status"><span class="dot" id="dot"></span> <span id="statusText">Жду руки…</span></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn" id="toggleCam">Скрыть камеру</button>
+      <button class="btn" id="clear">Очистить</button>
+      <button class="btn" id="undo">Отменить</button>
+      <button class="btn" id="save">PNG</button>
+      <div class="legend">• Цвет: <b id="colorLabel">#00E1FF</b> • Толщина: <b id="sizeLabel">6</b> • Режим: <b id="modeLabel">idle</b></div>
+      <div style="flex:1"></div>
+      <div class="swatches" id="swatches"></div>
+      <button class="btn small" id="debug" data-ghost="1">Отладка рук</button>
+    </div>
+  </div>
+
+  <!-- MediaPipe (Hands) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+  <script>
+  ;(() => {
+    // ---------- DOM ----------
+    const video = document.getElementById('video');
+    const feed = document.getElementById('feed');
+    const draw = document.getElementById('draw');
+    const overlay = document.getElementById('overlay');
+    const dot = document.getElementById('dot');
+    const statusText = document.getElementById('statusText');
+    const colorLabel = document.getElementById('colorLabel');
+    const sizeLabel = document.getElementById('sizeLabel');
+    const modeLabel = document.getElementById('modeLabel');
+    const swatches = document.getElementById('swatches');
+    const debugBtn = document.getElementById('debug');
+    const hint = document.getElementById('hint');
+    const toggleCamBtn = document.getElementById('toggleCam');
+
+    const feedCtx = feed.getContext('2d');
+    const drawCtx = draw.getContext('2d');
+    const overlayCtx = overlay.getContext('2d');
+
+    const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    const mirrored = true; // mirror feed for natural UX
+    let showDebug = false;
+    let showCamera = true;
+
+    const palette = [
+      '#00E1FF', '#7CFFCB', '#FFD166', '#FF6EA1', '#9B5CFF', '#00FF87', '#FF9A3C', '#FFFFFF'
+    ];
+    let colorIndex = 0;
+    let strokeColor = palette[colorIndex];
+    let strokeSize = 6;
+
+    // History for undo
+    const history = [];
+    const MAX_HISTORY = 50;
+
+    // Gesture state
+    let lastIndexPt = null;      // smoothed fingertip
+    let penDown = false;         // drawing when pinch
+    let openPalmStart = null;    // for clear hold
+    let lastVictory = false;
+    let lastThree = false;
+
+    // Resize canvases to fit stage
+    function resizeCanvases(){
+      const rect = document.getElementById('stage').getBoundingClientRect();
+      [feed, draw, overlay].forEach(c => {
+        c.width = Math.floor(rect.width * DPR);
+        c.height = Math.floor(rect.height * DPR);
+        c.style.width = rect.width + 'px';
+        c.style.height = rect.height + 'px';
+      });
+    }
+    resizeCanvases();
+    window.addEventListener('resize', resizeCanvases);
+
+    // UI helpers
+    function setDot(color){ dot.style.background = color; }
+    function setStatus(text){ statusText.textContent = text; }
+    function setMode(text){ modeLabel.textContent = text; }
+    function cycleColor(){ colorIndex = (colorIndex + 1) % palette.length; strokeColor = palette[colorIndex]; colorLabel.textContent = strokeColor; }
+    function cycleSize(){
+      const sizes = [3, 6, 10, 16, 24, 36];
+      const idx = sizes.indexOf(strokeSize);
+      strokeSize = sizes[(idx + 1) % sizes.length];
+      sizeLabel.textContent = strokeSize;
+    }
+    function saveToHistory(){
+      try{
+        const img = drawCtx.getImageData(0,0,draw.width, draw.height);
+        history.push(img);
+        if(history.length > MAX_HISTORY) history.shift();
+      }catch(e){ /* ignore */ }
+    }
+    function undo(){
+      const last = history.pop();
+      if(!last) return;
+      drawCtx.clearRect(0,0,draw.width, draw.height);
+      drawCtx.putImageData(last, 0, 0);
+    }
+    function clearCanvas(){
+      drawCtx.clearRect(0,0,draw.width, draw.height);
+      setStatus('Холст очищен');
+    }
+
+    // Build color swatches
+    palette.forEach((col,i)=>{
+      const el = document.createElement('div');
+      el.className = 'sw'; el.style.background = col; el.title = col;
+      el.addEventListener('click', ()=>{ strokeColor = col; colorIndex = i; colorLabel.textContent = strokeColor; });
+      swatches.appendChild(el);
+    });
+
+    document.getElementById('clear').addEventListener('click', clearCanvas);
+    document.getElementById('undo').addEventListener('click', undo);
+    document.getElementById('save').addEventListener('click', ()=>{
+      // Composite feed (optional) + draw to export a clean PNG of drawing only
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = draw.width; exportCanvas.height = draw.height;
+      const ec = exportCanvas.getContext('2d');
+      ec.drawImage(draw, 0, 0);
+      const url = exportCanvas.toDataURL('image/png');
+      const a = document.createElement('a'); a.href = url; a.download = 'gesture-draw.png'; a.click();
+    });
+    debugBtn.addEventListener('click', ()=>{ showDebug = !showDebug; debugBtn.textContent = showDebug ? 'Отладка: ВКЛ' : 'Отладка рук'; });
+    toggleCamBtn.addEventListener('click', ()=>{
+      showCamera = !showCamera;
+      video.style.opacity = showCamera ? .34 : 0;
+      toggleCamBtn.textContent = showCamera ? 'Скрыть камеру' : 'Показать камеру';
+    });
+
+    // ---------- Hand logic ----------
+    function bbSize(landmarks){
+      let minX=1e9, minY=1e9, maxX=-1e9, maxY=-1e9;
+      for(const lm of landmarks){
+        if(lm.x<minX) minX=lm.x; if(lm.y<minY) minY=lm.y; if(lm.x>maxX) maxX=lm.x; if(lm.y>maxY) maxY=lm.y;
+      }
+      const dx = maxX-minX, dy = maxY-minY; return Math.hypot(dx,dy); // normalized diag
+    }
+    function px({x,y}){ // map normalized to canvas px, mirrored horizontally
+      const w = feed.width, h = feed.height;
+      const X = mirrored ? (1 - x) : x;
+      return {x: X * w, y: y * h};
+    }
+    function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+
+    function fingerExtended(lm, tip, pip){
+      // simple vertical check: tip above pip (y smaller)
+      return lm[tip].y < lm[pip].y;
+    }
+
+    function detectGestures(lm){
+      const size = bbSize(lm); // normalized
+      const pinchThresh = Math.max(0.035, size * 0.10);
+      const iTip = lm[8], tTip = lm[4];
+      const isPinch = Math.hypot(iTip.x - tTip.x, iTip.y - tTip.y) < pinchThresh;
+
+      const indexUp = fingerExtended(lm, 8, 6);
+      const middleUp = fingerExtended(lm, 12, 10);
+      const ringUp = fingerExtended(lm, 16, 14);
+      const pinkyUp = fingerExtended(lm, 20, 18);
+
+      const openPalm = indexUp && middleUp && ringUp && pinkyUp;
+      const victory = indexUp && middleUp && !ringUp && !pinkyUp && !isPinch;
+      const three = indexUp && middleUp && ringUp && !pinkyUp && !isPinch;
+
+      return { isPinch, openPalm, victory, three };
+    }
+
+    function smooth(prev, next){
+      if(!prev) return next;
+      const a = 0.30; // smoothing factor
+      return { x: prev.x*(1-a) + next.x*a, y: prev.y*(1-a) + next.y*a };
+    }
+
+    function drawLine(a,b){
+      drawCtx.lineCap = 'round';
+      drawCtx.lineJoin = 'round';
+      drawCtx.strokeStyle = strokeColor;
+      drawCtx.lineWidth = strokeSize;
+      drawCtx.beginPath();
+      drawCtx.moveTo(a.x, a.y);
+      drawCtx.lineTo(b.x, b.y);
+      drawCtx.stroke();
+    }
+
+    // Render helpers
+    function renderFeedFrame(){
+      // draw the video into feed canvas (so we can mirror + scale nicely)
+      if(video.videoWidth && video.videoHeight){
+        feedCtx.save();
+        feedCtx.clearRect(0,0,feed.width,feed.height);
+        // cover fit
+        const vw = video.videoWidth, vh = video.videoHeight;
+        const cw = feed.width, ch = feed.height;
+        const scale = Math.max(cw/vw, ch/vh);
+        const sw = vw * scale, sh = vh * scale;
+        feedCtx.translate(cw/2, ch/2);
+        feedCtx.scale(mirrored ? -1 : 1, 1);
+        feedCtx.drawImage(video, -sw/2, -sh/2, sw, sh);
+        feedCtx.restore();
+      }
+    }
+
+    function renderDebugLandmarks(landmarks){
+      overlayCtx.clearRect(0,0,overlay.width, overlay.height);
+      if(!showDebug) return;
+      for(const lm of landmarks){
+        // draw points
+        overlayCtx.save();
+        overlayCtx.globalAlpha = .9;
+        overlayCtx.fillStyle = 'rgba(124,255,203,.95)';
+        for(const p of lm){ const q = px(p); overlayCtx.beginPath(); overlayCtx.arc(q.x, q.y, 4, 0, Math.PI*2); overlayCtx.fill(); }
+        overlayCtx.restore();
+      }
+    }
+
+    // ---------- MediaPipe Hands ----------
+    const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+    hands.setOptions({
+      maxNumHands: 2,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.6,
+      selfieMode: true
+    });
+
+    hands.onResults((results) => {
+      renderFeedFrame(); // keep background fresh
+
+      const ml = results.multiHandLandmarks || [];
+      renderDebugLandmarks(ml);
+
+      if(ml.length === 0){
+        setDot('#999'); setStatus('Жду руки…'); setMode('idle');
+        lastIndexPt = null; penDown = false; openPalmStart = null;
+        return;
+      }
+
+      // Use the first (closest) hand for drawing
+      const lm = ml[0];
+
+      // Gestures
+      const g = detectGestures(lm);
+      const idx = px(lm[8]); // index tip
+      lastIndexPt = smooth(lastIndexPt, idx);
+
+      if(g.isPinch){
+        if(!penDown){ penDown = true; setMode('draw'); saveToHistory(); }
+        setDot('var(--ok)'); setStatus('Рисую (pinch)');
+        // draw trail
+        if(lastIndexPt){ drawLine(lastIndexPt, idx); }
+      } else {
+        if(penDown){ penDown = false; setMode('idle'); }
+        setDot('#ffd166'); setStatus('Курсор: поднесите указательный палец');
+      }
+
+      // Victory -> next color (edge trigger)
+      if(g.victory && !lastVictory){ cycleColor(); setStatus('Цвет → ' + strokeColor); }
+      lastVictory = g.victory;
+
+      // Three-fingers -> next size (edge trigger)
+      if(g.three && !lastThree){ cycleSize(); setStatus('Толщина → ' + strokeSize); }
+      lastThree = g.three;
+
+      // Open palm hold -> clear
+      if(g.openPalm){
+        if(!openPalmStart) openPalmStart = performance.now();
+        const dt = performance.now() - openPalmStart;
+        setMode(dt > 800 ? 'clear' : 'hold…');
+        if(dt > 800){ clearCanvas(); openPalmStart = null; }
+      } else {
+        openPalmStart = null;
+      }
+
+      colorLabel.textContent = strokeColor; sizeLabel.textContent = strokeSize;
+    });
+
+    async function startCamera(){
+      try{
+        const constraints = { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio:false };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream; await video.play();
+        setStatus('Камера активна'); setDot('#7cf7d4');
+
+        // Start MediaPipe camera helper
+        const cam = new Camera(video, {
+          onFrame: async () => { await hands.send({ image: video }); },
+          width: 1280, height: 720
+        });
+        cam.start();
+      } catch(err){
+        setStatus('Нет доступа к камере: ' + err.message);
+        hint.textContent = 'Дайте доступ к камере в настройках браузера';
+        setDot('var(--danger)');
+      }
+    }
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e)=>{
+      if(e.key.toLowerCase() === 'u') undo();
+      if(e.key.toLowerCase() === 'c') clearCanvas();
+      if(e.key.toLowerCase() === 'd') debugBtn.click();
+    });
+
+    // Kickoff
+    startCamera();
+  })();
+  </script>
+</body>
+</html>
