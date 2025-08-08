@@ -14,83 +14,46 @@
             radial-gradient(1200px 800px at 50% 120%, #00ff9d 0%, rgba(0,255,157,0) 60%),
             #0b0f14;
       --glass: rgba(255,255,255,0.08);
-      --glass-2: rgba(255,255,255,0.14);
-      --txt: #e7eef7;
-      --muted: #9db2c7;
-      --accent: #7cf7d4;
-      --danger: #ff4d6d;
-      --ok: #9fff6a;
+      --txt: #e7eef7; --muted:#9db2c7; --accent:#7cf7d4; --danger:#ff4d6d; --ok:#9fff6a;
       --shadow: 0 20px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
     }
     *{box-sizing:border-box}
-    html,body{height:100%;}
-    body{
-      margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-      color:var(--txt); background:var(--bg); overflow:hidden;
-    }
-    .app{position:fixed; inset:0; display:grid; grid-template-rows:auto 1fr auto; gap:14px; padding:16px;}
+    html,body{height:100%}
+    body{margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial; color:var(--txt); background:var(--bg); overflow:hidden}
+    .app{position:fixed; inset:0; display:grid; grid-template-rows:auto 1fr auto; gap:14px; padding:16px}
 
     /* Stage */
-    .stage{
-      position:relative; border-radius:22px; overflow:hidden;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      box-shadow:var(--shadow);
-      backdrop-filter: blur(16px) saturate(120%);
-      -webkit-backdrop-filter: blur(16px) saturate(120%);
-      isolation:isolate;
-    }
-    video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:.34;}
-    canvas{position:absolute; inset:0; width:100%; height:100%;}
+    .stage{position:relative; border-radius:22px; overflow:hidden; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); box-shadow:var(--shadow); backdrop-filter: blur(16px) saturate(120%); -webkit-backdrop-filter: blur(16px) saturate(120%); isolation:isolate}
+    video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:.34}
+    canvas{position:absolute; inset:0; width:100%; height:100%}
+    #feed{z-index:1}
     #draw{z-index:3}
     #overlay{z-index:4; pointer-events:none}
-    .badge{
-      position:absolute; z-index:5; top:12px; left:12px; padding:8px 12px; border-radius:999px;
-      background:var(--glass); border:1px solid rgba(255,255,255,.14); font-weight:600; font-size:12px; letter-spacing:.3px;
-      box-shadow:var(--shadow);
-    }
+    #hand3d{z-index:2; display:none}
+    .badge{position:absolute; z-index:5; top:12px; left:12px; padding:8px 12px; border-radius:999px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); font-weight:600; font-size:12px; letter-spacing:.3px; box-shadow:var(--shadow)}
     .status{display:flex; align-items:center; gap:8px}
     .dot{width:8px; height:8px; border-radius:50%; background:#999}
 
     /* Top bar */
     .top{display:flex; align-items:center; justify-content:space-between; gap:12px}
     .brand{display:flex; align-items:center; gap:12px}
-    .brand .logo{width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,#00ffa6,#00d0ff 60%,#7b61ff);
-      box-shadow: 0 10px 30px rgba(0,255,166,.35), inset 0 1px 0 rgba(255,255,255,.25);
-    }
+    .brand .logo{width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,#00ffa6,#00d0ff 60%,#7b61ff); box-shadow:0 10px 30px rgba(0,255,166,.35), inset 0 1px 0 rgba(255,255,255,.25)}
     .brand .title{font-weight:800; letter-spacing:.2px}
-    .pill{
-      display:inline-flex; align-items:center; gap:10px; padding:10px 14px; border-radius:14px; background:var(--glass);
-      border:1px solid rgba(255,255,255,.12); box-shadow:var(--shadow); font-size:12px; color:var(--muted);
-    }
+    .pill{display:inline-flex; align-items:center; gap:10px; padding:10px 14px; border-radius:14px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); box-shadow:var(--shadow); font-size:12px; color:var(--muted)}
 
     /* Bottom controls */
-    .controls{
-      display:flex; flex-wrap:wrap; align-items:center; gap:10px;
-      background:var(--glass); border:1px solid rgba(255,255,255,.12); padding:10px; border-radius:16px; box-shadow:var(--shadow);
-    }
-    .btn{
-      -webkit-tap-highlight-color: transparent;
-      user-select:none; cursor:pointer; height:42px; min-width:42px; padding:0 14px; border-radius:12px; border:1px solid rgba(255,255,255,.14);
-      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
-      display:inline-flex; align-items:center; justify-content:center; gap:10px; font-weight:600; color:var(--txt);
-      transition:transform .08s ease, background .2s ease, opacity .2s ease; box-shadow:var(--shadow);
-    }
+    .controls{display:flex; flex-wrap:wrap; align-items:center; gap:10px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); padding:10px; border-radius:16px; box-shadow:var(--shadow)}
+    .btn{-webkit-tap-highlight-color:transparent; user-select:none; cursor:pointer; height:42px; min-width:42px; padding:0 14px; border-radius:12px; border:1px solid rgba(255,255,255,.14); background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)); display:inline-flex; align-items:center; justify-content:center; gap:10px; font-weight:600; color:var(--txt); transition:transform .08s ease, background .2s ease, opacity .2s ease; box-shadow:var(--shadow)}
     .btn:active{transform:translateY(1px) scale(.98)}
-    .btn[data-ghost="1"]{background:transparent}
     .btn.small{height:36px; padding:0 10px; font-weight:600; font-size:12px}
 
-    .swatches{display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px; background:var(--glass); border:1px solid rgba(255,255,255,.12)}
+    .swatches{display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12)}
     .sw{width:22px; height:22px; border-radius:50%; border:2px solid rgba(255,255,255,.35); box-shadow:var(--shadow); cursor:pointer}
 
     .legend{display:flex; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:12px}
     .legend b{color:var(--txt)}
 
-    @media (max-width: 840px){
-      .app{padding:12px; gap:10px}
-      .controls{gap:8px}
-      .btn{height:40px; min-width:40px; padding:0 12px}
-      .badge{top:10px; left:10px}
-    }
+    @media (max-width:840px){ .app{padding:12px; gap:10px} .controls{gap:8px} .btn{height:40px; min-width:40px; padding:0 12px} .badge{top:10px; left:10px} }
   </style>
 </head>
 <body>
@@ -100,12 +63,13 @@
         <div class="logo" aria-hidden="true"></div>
         <div class="title">HAND CONTROL • <span style="color:var(--accent)">Gesture Draw</span></div>
       </div>
-      <div class="pill" id="hint">Разрешите доступ к камере. Жесты: <b>pinch</b>=рисовать, <b>V</b>=цвет, <b>3 пальца</b>=толщина, <b>ладонь</b>=очистка.</div>
+      <div class="pill" id="hint">Жесты: <b>pinch</b>=рисовать, <b>V</b>=цвет, <b>3 пальца</b>=толщина, <b>ладонь (0.8s)</b>=очистка.</div>
     </div>
 
     <div class="stage" id="stage">
       <video id="video" playsinline></video>
       <canvas id="feed"></canvas>
+      <canvas id="hand3d"></canvas>
       <canvas id="draw"></canvas>
       <canvas id="overlay"></canvas>
       <div class="badge">
@@ -129,14 +93,19 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <!-- Three.js for 3D hand -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
   ;(() => {
     // ---------- DOM ----------
+    const stage = document.getElementById('stage');
     const video = document.getElementById('video');
     const feed = document.getElementById('feed');
     const draw = document.getElementById('draw');
     const overlay = document.getElementById('overlay');
+    const hand3d = document.getElementById('hand3d');
     const dot = document.getElementById('dot');
     const statusText = document.getElementById('statusText');
     const colorLabel = document.getElementById('colorLabel');
@@ -152,37 +121,30 @@
     const overlayCtx = overlay.getContext('2d');
 
     const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    const mirrored = true; // mirror feed for natural UX
+    const mirrored = true; // mirror for natural UX
     let showDebug = false;
-    let showCamera = true;
+    let showCamera = true; // controls feed rendering
 
-    const palette = [
-      '#00E1FF', '#7CFFCB', '#FFD166', '#FF6EA1', '#9B5CFF', '#00FF87', '#FF9A3C', '#FFFFFF'
-    ];
-    let colorIndex = 0;
-    let strokeColor = palette[colorIndex];
-    let strokeSize = 6;
+    const palette = ['#00E1FF','#7CFFCB','#FFD166','#FF6EA1','#9B5CFF','#00FF87','#FF9A3C','#FFFFFF'];
+    let colorIndex = 0; let strokeColor = palette[colorIndex]; let strokeSize = 6;
 
     // History for undo
-    const history = [];
-    const MAX_HISTORY = 50;
+    const history = []; const MAX_HISTORY = 50;
 
-    // Gesture state
-    let lastIndexPt = null;      // smoothed fingertip
-    let penDown = false;         // drawing when pinch
-    let openPalmStart = null;    // for clear hold
-    let lastVictory = false;
-    let lastThree = false;
+    // Gesture & drawing state
+    let penDown = false;        // drawing when pinch
+    let openPalmStart = null;   // for clear hold
+    let lastVictory = false; let lastThree = false;
+    let prevPt = null;          // previous smoothed draw point
+
+    // Video-to-canvas transform cache for correct overlay alignment
+    const vf = { vw:0, vh:0, cw:0, ch:0, scale:1, ox:0, oy:0 };
 
     // Resize canvases to fit stage
     function resizeCanvases(){
-      const rect = document.getElementById('stage').getBoundingClientRect();
-      [feed, draw, overlay].forEach(c => {
-        c.width = Math.floor(rect.width * DPR);
-        c.height = Math.floor(rect.height * DPR);
-        c.style.width = rect.width + 'px';
-        c.style.height = rect.height + 'px';
-      });
+      const rect = stage.getBoundingClientRect();
+      [feed, draw, overlay, hand3d].forEach(c => { c.width = Math.floor(rect.width * DPR); c.height = Math.floor(rect.height * DPR); c.style.width = rect.width + 'px'; c.style.height = rect.height + 'px'; });
+      if(renderer){ renderer.setSize(hand3d.width, hand3d.height, false); renderer.setPixelRatio(DPR); camera.aspect = hand3d.width/hand3d.height; camera.updateProjectionMatrix(); }
     }
     resizeCanvases();
     window.addEventListener('resize', resizeCanvases);
@@ -192,231 +154,183 @@
     function setStatus(text){ statusText.textContent = text; }
     function setMode(text){ modeLabel.textContent = text; }
     function cycleColor(){ colorIndex = (colorIndex + 1) % palette.length; strokeColor = palette[colorIndex]; colorLabel.textContent = strokeColor; }
-    function cycleSize(){
-      const sizes = [3, 6, 10, 16, 24, 36];
-      const idx = sizes.indexOf(strokeSize);
-      strokeSize = sizes[(idx + 1) % sizes.length];
-      sizeLabel.textContent = strokeSize;
-    }
-    function saveToHistory(){
-      try{
-        const img = drawCtx.getImageData(0,0,draw.width, draw.height);
-        history.push(img);
-        if(history.length > MAX_HISTORY) history.shift();
-      }catch(e){ /* ignore */ }
-    }
-    function undo(){
-      const last = history.pop();
-      if(!last) return;
-      drawCtx.clearRect(0,0,draw.width, draw.height);
-      drawCtx.putImageData(last, 0, 0);
-    }
-    function clearCanvas(){
-      drawCtx.clearRect(0,0,draw.width, draw.height);
-      setStatus('Холст очищен');
-    }
+    function cycleSize(){ const sizes=[3,6,10,16,24,36]; const idx=sizes.indexOf(strokeSize); strokeSize = sizes[(idx+1)%sizes.length]; sizeLabel.textContent = strokeSize; }
+    function saveToHistory(){ try{ const img = drawCtx.getImageData(0,0,draw.width,draw.height); history.push(img); if(history.length>MAX_HISTORY) history.shift(); }catch(e){} }
+    function undo(){ const last = history.pop(); if(!last) return; drawCtx.clearRect(0,0,draw.width,draw.height); drawCtx.putImageData(last,0,0); }
+    function clearCanvas(){ drawCtx.clearRect(0,0,draw.width,draw.height); setStatus('Холст очищен'); }
 
     // Build color swatches
-    palette.forEach((col,i)=>{
-      const el = document.createElement('div');
-      el.className = 'sw'; el.style.background = col; el.title = col;
-      el.addEventListener('click', ()=>{ strokeColor = col; colorIndex = i; colorLabel.textContent = strokeColor; });
-      swatches.appendChild(el);
-    });
+    palette.forEach((col,i)=>{ const el=document.createElement('div'); el.className='sw'; el.style.background=col; el.title=col; el.addEventListener('click',()=>{ strokeColor=col; colorIndex=i; colorLabel.textContent=strokeColor; }); swatches.appendChild(el); });
 
     document.getElementById('clear').addEventListener('click', clearCanvas);
     document.getElementById('undo').addEventListener('click', undo);
-    document.getElementById('save').addEventListener('click', ()=>{
-      // Composite feed (optional) + draw to export a clean PNG of drawing only
-      const exportCanvas = document.createElement('canvas');
-      exportCanvas.width = draw.width; exportCanvas.height = draw.height;
-      const ec = exportCanvas.getContext('2d');
-      ec.drawImage(draw, 0, 0);
-      const url = exportCanvas.toDataURL('image/png');
-      const a = document.createElement('a'); a.href = url; a.download = 'gesture-draw.png'; a.click();
-    });
-    debugBtn.addEventListener('click', ()=>{ showDebug = !showDebug; debugBtn.textContent = showDebug ? 'Отладка: ВКЛ' : 'Отладка рук'; });
-    toggleCamBtn.addEventListener('click', ()=>{
-      showCamera = !showCamera;
-      video.style.opacity = showCamera ? .34 : 0;
-      toggleCamBtn.textContent = showCamera ? 'Скрыть камеру' : 'Показать камеру';
-    });
+    document.getElementById('save').addEventListener('click', ()=>{ const c=document.createElement('canvas'); c.width=draw.width; c.height=draw.height; const ec=c.getContext('2d'); ec.drawImage(draw,0,0); const url=c.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download='gesture-draw.png'; a.click(); });
+    debugBtn.addEventListener('click', ()=>{ showDebug=!showDebug; debugBtn.textContent = showDebug ? 'Отладка: ВКЛ' : 'Отладка рук'; });
+    toggleCamBtn.addEventListener('click', ()=>{ showCamera=!showCamera; toggleCamBtn.textContent = showCamera ? 'Скрыть камеру' : 'Показать камеру'; // show/hide 3D panel
+      hand3d.style.display = showCamera ? 'none' : 'block'; setMode(showCamera ? 'camera' : '3D'); });
 
-    // ---------- Hand logic ----------
-    function bbSize(landmarks){
-      let minX=1e9, minY=1e9, maxX=-1e9, maxY=-1e9;
-      for(const lm of landmarks){
-        if(lm.x<minX) minX=lm.x; if(lm.y<minY) minY=lm.y; if(lm.x>maxX) maxX=lm.x; if(lm.y>maxY) maxY=lm.y;
+    // ---------- Mapping & rendering helpers ----------
+    function updateVideoTransform(){
+      vf.vw = video.videoWidth || 1280; vf.vh = video.videoHeight || 720; vf.cw = feed.width; vf.ch = feed.height;
+      const scale = Math.max(vf.cw/vf.vw, vf.ch/vf.vh); vf.scale = scale; const sw=vf.vw*scale, sh=vf.vh*scale; vf.ox=(vf.cw - sw)/2; vf.oy=(vf.ch - sh)/2;
+    }
+    function drawFeed(){
+      // Always update transform; draw only if showCamera
+      updateVideoTransform();
+      feedCtx.clearRect(0,0,feed.width,feed.height);
+      if(showCamera && video.videoWidth && video.videoHeight){
+        const sw=vf.vw*vf.scale, sh=vf.vh*vf.scale; feedCtx.save(); feedCtx.translate(vf.cw/2, vf.ch/2); feedCtx.scale(mirrored?-1:1,1); feedCtx.drawImage(video, -sw/2, -sh/2, sw, sh); feedCtx.restore();
       }
-      const dx = maxX-minX, dy = maxY-minY; return Math.hypot(dx,dy); // normalized diag
+      feed.style.opacity = showCamera ? 0.34 : 0; // visual fade
     }
-    function px({x,y}){ // map normalized to canvas px, mirrored horizontally
-      const w = feed.width, h = feed.height;
-      const X = mirrored ? (1 - x) : x;
-      return {x: X * w, y: y * h};
-    }
-    function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
-
-    function fingerExtended(lm, tip, pip){
-      // simple vertical check: tip above pip (y smaller)
-      return lm[tip].y < lm[pip].y;
-    }
-
-    function detectGestures(lm){
-      const size = bbSize(lm); // normalized
-      const pinchThresh = Math.max(0.035, size * 0.10);
-      const iTip = lm[8], tTip = lm[4];
-      const isPinch = Math.hypot(iTip.x - tTip.x, iTip.y - tTip.y) < pinchThresh;
-
-      const indexUp = fingerExtended(lm, 8, 6);
-      const middleUp = fingerExtended(lm, 12, 10);
-      const ringUp = fingerExtended(lm, 16, 14);
-      const pinkyUp = fingerExtended(lm, 20, 18);
-
-      const openPalm = indexUp && middleUp && ringUp && pinkyUp;
-      const victory = indexUp && middleUp && !ringUp && !pinkyUp && !isPinch;
-      const three = indexUp && middleUp && ringUp && !pinkyUp && !isPinch;
-
-      return { isPinch, openPalm, victory, three };
-    }
-
-    function smooth(prev, next){
-      if(!prev) return next;
-      const a = 0.30; // smoothing factor
-      return { x: prev.x*(1-a) + next.x*a, y: prev.y*(1-a) + next.y*a };
-    }
-
-    function drawLine(a,b){
-      drawCtx.lineCap = 'round';
-      drawCtx.lineJoin = 'round';
-      drawCtx.strokeStyle = strokeColor;
-      drawCtx.lineWidth = strokeSize;
-      drawCtx.beginPath();
-      drawCtx.moveTo(a.x, a.y);
-      drawCtx.lineTo(b.x, b.y);
-      drawCtx.stroke();
-    }
-
-    // Render helpers
-    function renderFeedFrame(){
-      // draw the video into feed canvas (so we can mirror + scale nicely)
-      if(video.videoWidth && video.videoHeight){
-        feedCtx.save();
-        feedCtx.clearRect(0,0,feed.width,feed.height);
-        // cover fit
-        const vw = video.videoWidth, vh = video.videoHeight;
-        const cw = feed.width, ch = feed.height;
-        const scale = Math.max(cw/vw, ch/vh);
-        const sw = vw * scale, sh = vh * scale;
-        feedCtx.translate(cw/2, ch/2);
-        feedCtx.scale(mirrored ? -1 : 1, 1);
-        feedCtx.drawImage(video, -sw/2, -sh/2, sw, sh);
-        feedCtx.restore();
-      }
+    function px(pt){ // map normalized [0..1] to canvas pixels with cover + mirror
+      if(!vf.vw || !vf.vh){ return {x:0,y:0}; }
+      let X = pt.x * vf.vw; if(mirrored) X = vf.vw - X; let Y = pt.y * vf.vh;
+      return { x: vf.ox + X * vf.scale, y: vf.oy + Y * vf.scale };
     }
 
     function renderDebugLandmarks(landmarks){
-      overlayCtx.clearRect(0,0,overlay.width, overlay.height);
+      overlayCtx.clearRect(0,0,overlay.width,overlay.height);
       if(!showDebug) return;
       for(const lm of landmarks){
-        // draw points
-        overlayCtx.save();
-        overlayCtx.globalAlpha = .9;
-        overlayCtx.fillStyle = 'rgba(124,255,203,.95)';
+        overlayCtx.save(); overlayCtx.globalAlpha = .9; overlayCtx.fillStyle = 'rgba(124,255,203,.95)';
         for(const p of lm){ const q = px(p); overlayCtx.beginPath(); overlayCtx.arc(q.x, q.y, 4, 0, Math.PI*2); overlayCtx.fill(); }
         overlayCtx.restore();
       }
     }
 
+    // ---------- Drawing smoothing ----------
+    function lerp(a,b,t){ return a+(b-a)*t; }
+    function smoothPoint(prev, next){ if(!prev) return next; const a=0.35; return { x: lerp(prev.x,next.x,a), y: lerp(prev.y,next.y,a) }; }
+    function drawTo(pt){
+      // Quadratic smoothing with midpoint, plus densify for fast motion
+      if(!prevPt){ prevPt = pt; return; }
+      const mid = { x:(prevPt.x+pt.x)/2, y:(prevPt.y+pt.y)/2 };
+      drawCtx.lineCap='round'; drawCtx.lineJoin='round'; drawCtx.strokeStyle=strokeColor; drawCtx.lineWidth=strokeSize;
+      drawCtx.beginPath(); drawCtx.moveTo(prevPt.x, prevPt.y); drawCtx.quadraticCurveTo(prevPt.x, prevPt.y, mid.x, mid.y); drawCtx.stroke();
+      // Densify if far apart
+      const d = Math.hypot(pt.x - prevPt.x, pt.y - prevPt.y);
+      if(d > 12){ const steps = Math.min(24, Math.ceil(d/8)); for(let i=1;i<=steps;i++){ const t=i/steps; const x=lerp(prevPt.x, pt.x, t), y=lerp(prevPt.y, pt.y, t); drawCtx.beginPath(); drawCtx.arc(x,y, strokeSize*0.5, 0, Math.PI*2); drawCtx.fillStyle=strokeColor; drawCtx.fill(); } }
+      prevPt = pt;
+    }
+
+    // ---------- 3D Hand (Three.js) ----------
+    let renderer, scene, camera, controls, jointMeshes = [], boneMeshes = [];
+    const HAND_CONNECTIONS = [
+      [0,1],[1,2],[2,3],[3,4], // thumb
+      [0,5],[5,6],[6,7],[7,8], // index
+      [5,9],[9,10],[10,11],[11,12], // middle
+      [9,13],[13,14],[14,15],[15,16], // ring
+      [13,17],[17,18],[18,19],[19,20], // pinky
+      [0,17] // wrist to pinky base
+    ];
+
+    function init3D(){
+      renderer = new THREE.WebGLRenderer({ canvas: hand3d, antialias:true, alpha:true });
+      renderer.setPixelRatio(DPR); renderer.setSize(hand3d.width, hand3d.height, false);
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(40, hand3d.width/hand3d.height, 0.01, 10);
+      camera.position.set(0,0,1.2);
+      controls = new THREE.OrbitControls(camera, hand3d); controls.enableDamping=true; controls.enablePan=false; controls.target.set(0,0,0);
+      const light1 = new THREE.DirectionalLight(0xffffff, 1.0); light1.position.set(1,1,1); scene.add(light1);
+      const light2 = new THREE.AmbientLight(0xffffff, 0.5); scene.add(light2);
+      const jointGeo = new THREE.SphereGeometry(0.015, 24, 24);
+      const jointMat = new THREE.MeshStandardMaterial({ color:0x9aa0a6, metalness:0.2, roughness:0.6 });
+      for(let i=0;i<21;i++){ const m=new THREE.Mesh(jointGeo, jointMat.clone()); scene.add(m); jointMeshes.push(m); }
+      const cylGeo = new THREE.CylinderGeometry(0.007,0.007,1,12);
+      for(const _ of HAND_CONNECTIONS){ const mat=new THREE.MeshStandardMaterial({ color:0x9aa0a6, metalness:0.2, roughness:0.6 }); const c=new THREE.Mesh(cylGeo, mat); c.castShadow=false; c.receiveShadow=false; scene.add(c); boneMeshes.push(c); }
+      function animate(){ controls.update(); renderer.render(scene, camera); requestAnimationFrame(animate); }
+      animate();
+    }
+    init3D();
+
+    function update3D(lm){
+      // Normalize & center hand in 3D space using MediaPipe xyz (z ~ negative towards camera)
+      if(!lm || lm.length !== 21) return;
+      // Build arrays
+      const pts = lm.map(p=>({ x:(mirrored? -p.x : p.x), y:-p.y, z:(p.z||0) })); // mirror X, flip Y for 3D pleasant orientation
+      // Center & scale
+      const cx = pts.reduce((s,p)=>s+p.x,0)/pts.length, cy=pts.reduce((s,p)=>s+p.y,0)/pts.length, cz=pts.reduce((s,p)=>s+p.z,0)/pts.length;
+      let maxD = 0; for(const p of pts){ const dx=p.x-cx, dy=p.y-cy, dz=p.z-cz; maxD=Math.max(maxD, Math.hypot(dx,dy,dz)); }
+      const scale = maxD>0 ? 0.6/maxD : 1;
+      for(let i=0;i<pts.length;i++){ const p=pts[i]; jointMeshes[i].position.set( (p.x-cx)*scale, (p.y-cy)*scale, (p.z-cz)*scale ); }
+      // Bones
+      for(let i=0;i<HAND_CONNECTIONS.length;i++){
+        const [a,b] = HAND_CONNECTIONS[i]; const A = jointMeshes[a].position, B = jointMeshes[b].position; const m = boneMeshes[i];
+        const mid = new THREE.Vector3().addVectors(A,B).multiplyScalar(0.5); const dir = new THREE.Vector3().subVectors(B,A); const len = dir.length();
+        m.position.copy(mid); m.scale.set(1, len, 1); m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+      }
+    }
+
     // ---------- MediaPipe Hands ----------
     const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
-    hands.setOptions({
-      maxNumHands: 2,
-      modelComplexity: 1,
-      minDetectionConfidence: 0.6,
-      minTrackingConfidence: 0.6,
-      selfieMode: true
-    });
+    hands.setOptions({ maxNumHands:2, modelComplexity:1, minDetectionConfidence:0.6, minTrackingConfidence:0.6, selfieMode:true });
 
     hands.onResults((results) => {
-      renderFeedFrame(); // keep background fresh
+      // 1) Video background (or hidden)
+      drawFeed();
 
-      const ml = results.multiHandLandmarks || [];
-      renderDebugLandmarks(ml);
+      const all = results.multiHandLandmarks || [];
+      renderDebugLandmarks(all);
 
-      if(ml.length === 0){
-        setDot('#999'); setStatus('Жду руки…'); setMode('idle');
-        lastIndexPt = null; penDown = false; openPalmStart = null;
-        return;
-      }
+      if(all.length === 0){ setDot('#999'); setStatus('Жду руки…'); setMode(showCamera ? 'camera' : '3D'); prevPt=null; penDown=false; openPalmStart=null; return; }
 
-      // Use the first (closest) hand for drawing
-      const lm = ml[0];
+      // Use first hand for drawing + 3D
+      const lm = all[0];
+      update3D(lm);
 
       // Gestures
-      const g = detectGestures(lm);
-      const idx = px(lm[8]); // index tip
-      lastIndexPt = smooth(lastIndexPt, idx);
+      function bbSize(lm){ let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9; for(const p of lm){ if(p.x<minX)minX=p.x; if(p.y<minY)minY=p.y; if(p.x>maxX)maxX=p.x; if(p.y>maxY)maxY=p.y; } return Math.hypot(maxX-minX, maxY-minY); }
+      const size = bbSize(lm);
+      const pinchThresh = Math.max(0.035, size*0.10);
+      const iTip = lm[8], tTip = lm[4];
+      const isPinch = Math.hypot(iTip.x - tTip.x, iTip.y - tTip.y) < pinchThresh;
+      const indexUp = lm[8].y < lm[6].y; const middleUp = lm[12].y < lm[10].y; const ringUp = lm[16].y < lm[14].y; const pinkyUp = lm[20].y < lm[18].y;
+      const openPalm = indexUp && middleUp && ringUp && pinkyUp;
+      const victory = indexUp && middleUp && !ringUp && !pinkyUp && !isPinch;
+      const three = indexUp && middleUp && ringUp && !pinkyUp && !isPinch;
 
-      if(g.isPinch){
-        if(!penDown){ penDown = true; setMode('draw'); saveToHistory(); }
+      // Map fingertip to canvas
+      const idxPt = px(lm[8]);
+      const sm = smoothPoint(prevPt, idxPt);
+
+      if(isPinch){
+        if(!penDown){ penDown = true; saveToHistory(); setMode('draw'); }
         setDot('var(--ok)'); setStatus('Рисую (pinch)');
-        // draw trail
-        if(lastIndexPt){ drawLine(lastIndexPt, idx); }
+        drawTo(sm);
       } else {
-        if(penDown){ penDown = false; setMode('idle'); }
-        setDot('#ffd166'); setStatus('Курсор: поднесите указательный палец');
+        if(penDown){ penDown=false; }
+        prevPt = sm; // keep cursor following smoothly
+        setDot('#ffd166'); setStatus('Разомкните pinch чтобы прекратить рисование'); setMode(showCamera ? 'camera' : '3D');
       }
 
-      // Victory -> next color (edge trigger)
-      if(g.victory && !lastVictory){ cycleColor(); setStatus('Цвет → ' + strokeColor); }
-      lastVictory = g.victory;
+      if(victory && !lastVictory){ cycleColor(); setStatus('Цвет → ' + strokeColor); }
+      lastVictory = victory;
 
-      // Three-fingers -> next size (edge trigger)
-      if(g.three && !lastThree){ cycleSize(); setStatus('Толщина → ' + strokeSize); }
-      lastThree = g.three;
+      if(three && !lastThree){ cycleSize(); setStatus('Толщина → ' + strokeSize); }
+      lastThree = three;
 
-      // Open palm hold -> clear
-      if(g.openPalm){
-        if(!openPalmStart) openPalmStart = performance.now();
-        const dt = performance.now() - openPalmStart;
-        setMode(dt > 800 ? 'clear' : 'hold…');
-        if(dt > 800){ clearCanvas(); openPalmStart = null; }
-      } else {
-        openPalmStart = null;
-      }
+      if(openPalm){ if(!openPalmStart) openPalmStart = performance.now(); const dt = performance.now() - openPalmStart; setMode(dt>800 ? 'clear' : 'hold…'); if(dt>800){ clearCanvas(); openPalmStart=null; } }
+      else { openPalmStart=null; }
 
       colorLabel.textContent = strokeColor; sizeLabel.textContent = strokeSize;
     });
 
     async function startCamera(){
       try{
-        const constraints = { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio:false };
+        const constraints = { video:{ facingMode:'user', width:{ideal:1280}, height:{ideal:720} }, audio:false };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = stream; await video.play();
-        setStatus('Камера активна'); setDot('#7cf7d4');
-
-        // Start MediaPipe camera helper
-        const cam = new Camera(video, {
-          onFrame: async () => { await hands.send({ image: video }); },
-          width: 1280, height: 720
-        });
+        video.srcObject = stream; await video.play(); setStatus('Камера активна'); setDot('#7cf7d4');
+        const cam = new Camera(video, { onFrame: async () => { await hands.send({ image: video }); }, width:1280, height:720 });
         cam.start();
-      } catch(err){
-        setStatus('Нет доступа к камере: ' + err.message);
-        hint.textContent = 'Дайте доступ к камере в настройках браузера';
-        setDot('var(--danger)');
-      }
+      } catch(err){ setStatus('Нет доступа к камере: ' + err.message); hint.textContent = 'Дайте доступ к камере в настройках браузера'; setDot('var(--danger)'); }
     }
 
     // Keyboard shortcuts
-    window.addEventListener('keydown', (e)=>{
-      if(e.key.toLowerCase() === 'u') undo();
-      if(e.key.toLowerCase() === 'c') clearCanvas();
-      if(e.key.toLowerCase() === 'd') debugBtn.click();
-    });
+    window.addEventListener('keydown', (e)=>{ const k=e.key.toLowerCase(); if(k==='u') undo(); if(k==='c') clearCanvas(); if(k==='d') debugBtn.click(); if(k==='k') toggleCamBtn.click(); });
 
     // Kickoff
+    hand3d.style.display = 'none';
     startCamera();
   })();
   </script>
